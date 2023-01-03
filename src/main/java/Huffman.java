@@ -4,60 +4,67 @@ import java.util.PriorityQueue;
 
 public class Huffman {
     Node Root ;
-//    Map<ByteArr, ByteArr> keyMap = new HashMap<>();
+    Map<ByteArr, ByteArr> keyMap = new HashMap<>();
     Map<ByteArr, ByteArr> reverseKeyMap = new HashMap<>();
 
-    private Node createTree(Map<ByteArr,Integer> frequences){
+    public Node createTree(Map<ByteArr,Integer> frequences){
 
         System.out.println("creating tree ....");
-
+        int n = frequences.size();
         PriorityQueue<Node> queue = new PriorityQueue<>();
         for (Map.Entry<ByteArr,Integer> e : frequences.entrySet()){
             if (e.getValue() != 0)
                 queue.add(new Node(e.getValue(), e.getKey()));
         }
-
-        while (queue.size() > 1){
-            Node l = queue.poll();
-            Node r = queue.poll();
-            assert r != null;
-            Node n = new Node(l.frequency+r.frequency,l,r);
-            queue.add(n);
+        for (int i= 1; i < n ;i++){
+            Node n1 = queue.poll();
+            Node n2 = queue.poll();
+            if (n1 == null || n2 == null){
+                continue;
+            }
+            queue.add(new Node(n1.frequency+n2.frequency,n1,n2));
         }
+
+
         System.out.println("tree is created");
-        assert queue.peek() != null;
-        Root = new Node (queue.peek().frequency,queue.peek().left,queue.peek().right);
-        return queue.peek();
+        return Root = queue.poll();
     }
 
-    public void createMap (Map<ByteArr,Integer> frequences){
+    public void createMap (Node root ,int type){
         System.out.println("creating map .....");
-        Node root = createTree(frequences);
         StringBuilder str = new StringBuilder();
-        _createMap(root,str);
+        Node n = root;
+        _createMap(n,str,type);
         System.out.println("map is created");
     }
 
-    private void _createMap(Node root,StringBuilder s){
+    private void _createMap(Node root,StringBuilder s,int type){
         if (root.isLeaf()) {
-            int num_bytes = s.length()/8+2;
+            int num_bytes ;
+            if (s.length() % 8 != 0){
+                num_bytes = s.length()/8+2;
+            }else{
+                num_bytes = s.length()/8+1;
+            }
             byte[] bytesArray = new byte[num_bytes];
             bytesArray[num_bytes-1] = (byte) s.length();
             for (int j=0 ;j < num_bytes-1; j++){
-                byte num=0;
-                for (int i = j*8; i < s.length() && i < j*8+8 ;i++){
+                byte num= 0;
+                for (int i = j*8; i < s.length() && i < j*8+8 ;i++){ // 01000000 01 -> 64 , 1 , 10
                     if (s.charAt(i) == '1')
                         num +=Math.pow(2,i-j*8);
                 }
                 bytesArray[j] = num;
             }
             ByteArr B = new ByteArr(bytesArray);
-            //keyMap.put(B,root.b);
-            reverseKeyMap.put(root.b,B);
+            if (type == 0)
+                reverseKeyMap.put(root.b,B);
+            else
+                keyMap.put(B,root.b);
         }else{
             StringBuilder r = new StringBuilder(s);
-            _createMap(root.left, s.insert(0,'0'));
-            _createMap(root.right, r.insert(0,'1'));
+            _createMap(root.left, s.insert(0,'0'),type);
+            _createMap(root.right, r.insert(0,'1'),type);
         }
     }
 
